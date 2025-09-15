@@ -9,14 +9,17 @@ import ebooklib
 import xlsxwriter
 from xlsxwriter.worksheet import Worksheet
 from novel_class import BookParser
+from utils.utils import *
 import numpy as np
 
 
 def clear_files():
-    folder_names = ['./to_translate', './temp', './to_epub', './result']
-    for i in range(0, 3):
+    folder_names = ['./temp', './to_epub', './to_translate', './result']
+    for i in range(0, 2):
         for file in os.listdir(folder_names[i]):
             os.remove(f'{folder_names[i]}/{file}')
+    for file in os.listdir(folder_names[2]):
+        os.replace(f'{folder_names[2]}/{file}', f'originals/{file}')
     for file in os.listdir(folder_names[3]):
         os.replace(f'{folder_names[3]}/{file}', f'all_result_books/{file}')
 
@@ -56,6 +59,7 @@ def translated_xlsx_to_epub(file, filename, enumerator):
             book.add_item(image1_item)
     except:
         pass
+    print(12312)
     print(res_arr[0][0])
     if res_arr[0][0].find('panda-novel') != -1:
         book.set_identifier(res_arr[0][0].split('|')[2].split('/')[-1])
@@ -112,6 +116,16 @@ def translated_xlsx_to_epub(file, filename, enumerator):
         book.set_identifier(filename.split('.')[0])
         book.set_title(filename.split('.')[0])
         book_name = filename.split('.')[0]
+    elif res_arr[0][0].find('allnovelbook.com') != -1:
+        parsed_name = parsers['allnovelbook.com'](res_arr[0][0])
+        if parsed_name:
+            book.set_identifier(parsed_name[:30])
+            book.set_title(parsed_name[:30])
+            book_name = parsed_name[:30]
+        else:
+            book.set_identifier(res_arr[0][0].split('|')[2][:30])
+            book.set_title(res_arr[0][0].split('|')[2][:30])
+            book_name = res_arr[0][0].split('|')[2][:30]
     else:
         book.set_identifier(res_arr[0][0].split('|')[2][:30])
         book.set_title(res_arr[0][0].split('|')[2][:30])
@@ -123,6 +137,7 @@ def translated_xlsx_to_epub(file, filename, enumerator):
                                 content=style)
     book.add_item(default_css)
     chapters = []
+    print(12312)
     for index, element in enumerate(res_arr):
         if element[0][:3] != '$$$':
             c1 = epub.EpubHtml(title=element[0].split('|')[0],
@@ -130,9 +145,13 @@ def translated_xlsx_to_epub(file, filename, enumerator):
                                lang='ru')
             txt = element[0]
             part_index = 1
-            while index + part_index < len(res_arr) and res_arr[index + part_index][0][:3] == '$$$':
-                txt += '|' + res_arr[index + part_index][0][3:]
-                part_index += 1
+            try:
+                while index + part_index < len(res_arr) and res_arr[index + part_index][0][:3] == '$$$':
+                    txt += '|' + res_arr[index + part_index][0][3:]
+                    part_index += 1
+            except Exception as e:
+                print(e)
+                print(res_arr[index + part_index])
             text = ' </p><p> '.join(txt.split('|')[1:])
             c1.set_content(u'<html><body><h3>{0}</h3><p>{1}</p></body></html>'.format(txt.split('|')[0], text))
             book.add_item(c1)
@@ -140,6 +159,7 @@ def translated_xlsx_to_epub(file, filename, enumerator):
 
     chapters.insert(0, epub.Link('intro.xhtml', 'Introduction', 'intro'))
 
+    print(12312)
     book.toc = chapters
 
     book.add_item(epub.EpubNcx())
@@ -155,21 +175,51 @@ def translated_xlsx_to_epub(file, filename, enumerator):
 
 
 def epub_to_xlsx(file, index):
+    import os
     book = epub.read_epub(file)
     items = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
     print(f'{file}-{len(items) // 300}')
     wbs = []
+    chapter_num = 0
+    i = 0
+
+    # Гарантируем существование папки temp и корректный путь к файлу
+    out_dir = "temp"
+    os.makedirs(out_dir, exist_ok=True)
+    base_name = os.path.splitext(os.path.basename(file))[0]
+
+    while chapter_num < len(items):
+        out_path = os.path.join(out_dir, f'{index}-{i}_{base_name}.xlsx')
+        wb = xlsxwriter.Workbook(out_path)
+        wbs.append(wb)
+        sheet = wb.add_worksheet()
+        new_it_index = 0
+        cumulative_sum = 0
+        print('ok')
+        while cumulative_sum < 2_500_000 and chapter_num < len(items):
+            result_text = erase_tags_from_text(items[chapter_num])
+            new_it_index = split_xlsx_for_rows(sheet, new_it_index, result_text)
+            cumulative_sum += len(result_text)
+            chapter_num += 1
+        print(f'file saving - {i} = {cumulative_sum} symbols')
+        wb.close()
+        i += 1
+
+    '''
     for i in range(0, len(items) // 300 + 1):
         wb = xlsxwriter.Workbook(f'temp/{index}-{i}_{".".join(file.split("/")[-1].split(".")[:-1])}.xlsx')
         wbs.append(wb)
         sheet = wb.add_worksheet()
         new_it_index = 0
         print('ok')
+        sum_text_len = 0
         for item_index, elem in enumerate(items[300*i+1:300*(i+1)]):
             result_text = erase_tags_from_text(items[item_index + 300*i])
             new_it_index = split_xlsx_for_rows(sheet, new_it_index, result_text)
+            sum_text_len += len(result_text)
+        print(f'file saving - {i} = {sum_text_len} symbols')
         wb.close()
-
+    '''
 
 def split_xlsx_for_rows(sheet: Worksheet, item_index: int, result_text: str, max_row_chars: int = 30000):
     if len(result_text) > max_row_chars:
