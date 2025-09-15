@@ -1,0 +1,21 @@
+# requirements.txt
+
+# GUI
+PyQt6>=6.7.0
+
+# HTTP-запросы
+requests>=2.32.0
+
+# Работа с таблицами и данными
+pandas>=2.2.2
+xlsxwriter>=3.2.0
+
+# Работа с изображениями
+Pillow>=10.4.0
+
+# Работа с EPUB
+EbookLib>=0.18
+
+# Математика и массивы
+numpy>=2.1.0
+openpyxl
