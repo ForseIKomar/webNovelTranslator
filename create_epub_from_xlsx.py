@@ -41,95 +41,19 @@ def translated_xlsx_to_epub(file, filename, enumerator):
         print(f"trying to get image from {'_'.join(filename.split('_')[1:])}")
         last_book = epub.read_epub('./to_translate/{0}.epub'.format('_'.join(filename.split('_')[1:])))
         if last_book.metadata[list(last_book.metadata.keys())[0]]['source'][0][1]['id'] == 'id.cover-image':
-            print(1)
             image_link = last_book.metadata[list(last_book.metadata.keys())[0]]['source'][0][0]
-            print(2)
             image_content = Image.open(BytesIO(req.get(image_link).content))
-            print(3)
             b = io.BytesIO()
-            print(4)
             image_content.save(b, 'jpeg')
-            print(5)
             b_image1 = b.getvalue()
-            print(6)
             image1_item = epub.EpubItem(uid='image_1', file_name='images/image1.jpeg', media_type='image/jpeg',
                                         content=b_image1)
-            print(7)
             book.set_cover(file_name='images/image1.jpeg', content=b_image1)
             book.add_item(image1_item)
     except:
         pass
-    print(12312)
-    print(res_arr[0][0])
-    if res_arr[0][0].find('panda-novel') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2].split('/')[-1])
-        book.set_title(res_arr[0][0].split('|')[3])
-        book_name = res_arr[0][0].split('|')[2].split('/')[-1]
-        book.add_author(res_arr[0][0].split('|')[9])
-    elif res_arr[0][0].find('fanfiction.net') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[3].split(': ')[-1])
-        element = ''
-        for elem in res_arr[0][0].split('|'):
-            if elem.find('fanfiction.net') != -1:
-                element = elem
-        book.set_title(element.split('/')[-1])
-        book_name = element.split('/')[-1]
-        book.add_author(res_arr[0][0].split('|')[6])
-    elif res_arr[0][0].find('hostednovel.com') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2])
-        book.set_title(res_arr[0][0].split('|')[2].split('/')[-1].split('#')[0])
-        book_name = res_arr[0][0].split('|')[2].split('/')[-1].split('#')[0]
-    elif res_arr[0][0].find('Custom-1') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[0])
-        book.set_title(res_arr[0][0].split('|')[0])
-        book_name = res_arr[0][0].split('|')[0]
-    elif res_arr[0][0].find(' https://genesistls.com/') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2])
-        book.set_title(res_arr[0][0].split('|')[2].split('/')[-2])
-        book_name = res_arr[0][0].split('|')[2].split('/')[-2]
-    elif res_arr[0][0].find('https://www.isotls.com/') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2])
-        book.set_title(res_arr[0][0].split('|')[2].split('/')[-2])
-        book_name = res_arr[0][0].split('|')[2].split('/')[-2]
-    elif res_arr[0][0].find('https://noblemtl.com/series/') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2])
-        book.set_title(res_arr[0][0].split('|')[2].split('/')[-2])
-        book_name = res_arr[0][0].split('|')[2].split('/')[-2]
-    elif res_arr[0][0].find('webnovel.com') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2][:30])
-        book.set_title(res_arr[0][0].split('|')[3][:30])
-        book_name = res_arr[0][0].split('|')[3][:30]
-    elif res_arr[0][0].find('scribblehub.com') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2])
-        book.set_title(res_arr[0][0].split('|')[2].split('/')[-2])
-        book_name = res_arr[0][0].split('|')[2].split('/')[-2]
-    elif res_arr[0][0].find('novelbin.com') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[2])
-        book.set_title(res_arr[0][0].split('|')[3])
-        book_name = res_arr[0][0].split('|')[3]
-    elif res_arr[0][0].find('Следов:') != -1:
-        book.set_identifier(res_arr[0][0].split('|')[0].split(': ')[-1])
-        book.set_title(res_arr[0][0].split('|')[0].split('/')[-1])
-        book_name = res_arr[0][0].split('|')[0].split('/')[0]
-        book.add_author(res_arr[0][0].split('|')[4])
-    elif res_arr[0][0].find('wuxiabox.com') != -1:
-        book.set_identifier(filename.split('.')[0])
-        book.set_title(filename.split('.')[0])
-        book_name = filename.split('.')[0]
-    elif res_arr[0][0].find('allnovelbook.com') != -1:
-        parsed_name = parsers['allnovelbook.com'](res_arr[0][0])
-        if parsed_name:
-            book.set_identifier(parsed_name[:30])
-            book.set_title(parsed_name[:30])
-            book_name = parsed_name[:30]
-        else:
-            book.set_identifier(res_arr[0][0].split('|')[2][:30])
-            book.set_title(res_arr[0][0].split('|')[2][:30])
-            book_name = res_arr[0][0].split('|')[2][:30]
-    else:
-        book.set_identifier(res_arr[0][0].split('|')[2][:30])
-        book.set_title(res_arr[0][0].split('|')[2][:30])
-        book_name = res_arr[0][0].split('|')[2][:30]
+
+    book_name = set_book_meta_data(book, filename, res_arr[0][0])
     book.set_language('ru')
     style = '''BODY { text-align: justify;}'''
 
@@ -137,9 +61,9 @@ def translated_xlsx_to_epub(file, filename, enumerator):
                                 content=style)
     book.add_item(default_css)
     chapters = []
-    print(12312)
+
     for index, element in enumerate(res_arr):
-        if element[0][:3] != '$$$':
+        if isinstance(element[0], str) and element[0][:3] != '$$$':
             c1 = epub.EpubHtml(title=element[0].split('|')[0],
                                file_name='page{0}.xhtml'.format(index),
                                lang='ru')
@@ -159,7 +83,6 @@ def translated_xlsx_to_epub(file, filename, enumerator):
 
     chapters.insert(0, epub.Link('intro.xhtml', 'Introduction', 'intro'))
 
-    print(12312)
     book.toc = chapters
 
     book.add_item(epub.EpubNcx())
@@ -172,6 +95,89 @@ def translated_xlsx_to_epub(file, filename, enumerator):
     print(f',   result stored in {new_file_name}')
     print()
     epub.write_epub(new_file_name, book, {})
+
+
+def set_book_meta_data(book, filename, meta_string):
+    if meta_string.find('panda-novel') != -1:
+        book.set_identifier(meta_string.split('|')[2].split('/')[-1])
+        book.set_title(meta_string.split('|')[3])
+        book_name = meta_string.split('|')[2].split('/')[-1]
+        book.add_author(meta_string.split('|')[9])
+    elif meta_string.find('fanfiction.net') != -1:
+        book.set_identifier(meta_string.split('|')[3].split(': ')[-1])
+        element = ''
+        for elem in meta_string.split('|'):
+            if elem.find('fanfiction.net') != -1:
+                element = elem
+        book.set_title(element.split('/')[-1])
+        book_name = element.split('/')[-1]
+        book.add_author(meta_string.split('|')[6])
+    elif meta_string.find('hostednovel.com') != -1:
+        book.set_identifier(meta_string.split('|')[2])
+        book.set_title(meta_string.split('|')[2].split('/')[-1].split('#')[0])
+        book_name = meta_string.split('|')[2].split('/')[-1].split('#')[0]
+    elif meta_string.find('Custom-1') != -1:
+        book.set_identifier(meta_string.split('|')[0])
+        book.set_title(meta_string.split('|')[0])
+        book_name = meta_string.split('|')[0]
+    elif meta_string.find(' https://genesistls.com/') != -1:
+        book.set_identifier(meta_string.split('|')[2])
+        book.set_title(meta_string.split('|')[2].split('/')[-2])
+        book_name = meta_string.split('|')[2].split('/')[-2]
+    elif meta_string.find('https://www.isotls.com/') != -1:
+        book.set_identifier(meta_string.split('|')[2])
+        book.set_title(meta_string.split('|')[2].split('/')[-2])
+        book_name = meta_string.split('|')[2].split('/')[-2]
+    elif meta_string.find('https://noblemtl.com/series/') != -1:
+        book.set_identifier(meta_string.split('|')[2])
+        book.set_title(meta_string.split('|')[2].split('/')[-2])
+        book_name = meta_string.split('|')[2].split('/')[-2]
+    elif meta_string.find('webnovel.com') != -1:
+        book.set_identifier(meta_string.split('|')[2][:30])
+        book.set_title(meta_string.split('|')[3][:30])
+        book_name = meta_string.split('|')[3][:30]
+    elif meta_string.find('scribblehub.com') != -1:
+        book.set_identifier(meta_string.split('|')[2])
+        book.set_title(meta_string.split('|')[2].split('/')[-2])
+        book_name = meta_string.split('|')[2].split('/')[-2]
+    elif meta_string.find('novelbin.com') != -1:
+        book.set_identifier(meta_string.split('|')[2])
+        book.set_title(meta_string.split('|')[3])
+        book_name = meta_string.split('|')[3]
+    elif meta_string.find('Следов:') != -1:
+        book.set_identifier(meta_string.split('|')[0].split(': ')[-1])
+        book.set_title(meta_string.split('|')[0].split('/')[-1])
+        book_name = meta_string.split('|')[0].split('/')[0]
+        book.add_author(meta_string.split('|')[4])
+    elif meta_string.find('wuxiabox.com') != -1:
+        book.set_identifier(filename.split('.')[0])
+        book.set_title(filename.split('.')[0])
+        book_name = filename.split('.')[0]
+    elif meta_string.find('allnovelbook.com') != -1:
+        parsed_name = parsers['allnovelbook.com'](meta_string)
+        if parsed_name:
+            book.set_identifier(parsed_name[:30])
+            book.set_title(parsed_name[:30])
+            book_name = parsed_name[:30]
+        else:
+            book.set_identifier(meta_string.split('|')[2][:30])
+            book.set_title(meta_string.split('|')[2][:30])
+            book_name = meta_string.split('|')[2][:30]
+    elif meta_string.find('fucknovelpia.com') != -1:
+        parsed_name = parsers['fucknovelpia.com'](meta_string)
+        if parsed_name:
+            book.set_identifier(parsed_name[:30])
+            book.set_title(parsed_name[:30])
+            book_name = parsed_name[:30]
+        else:
+            book.set_identifier(meta_string.split('|')[2][:30])
+            book.set_title(meta_string.split('|')[2][:30])
+            book_name = meta_string.split('|')[2][:30]
+    else:
+        book.set_identifier(meta_string.split('|')[2][:30])
+        book.set_title(meta_string.split('|')[2][:30])
+        book_name = meta_string.split('|')[2][:30]
+    return book_name
 
 
 def epub_to_xlsx(file, index):
